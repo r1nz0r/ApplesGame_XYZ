@@ -1,6 +1,7 @@
+#include <SFMl/Graphics.hpp>
+#include <cstdlib>
 #include "Math.h"
 #include "Constants.h"
-#include <SFMl/Graphics.hpp>
 
 namespace ApplesGame
 {
@@ -54,12 +55,12 @@ namespace ApplesGame
 
     int GetRandomInt(const int minValue, const int maxValue)
     {
-        return minValue + rand() % (maxValue - minValue + 1);
+        return minValue + std::rand() % (maxValue - minValue + 1);
     }
 
     float GetRandomFloat(float minValue, float maxValue)
     {
-        return minValue +  static_cast<float>(rand()) / static_cast<float>((RAND_MAX)) * (maxValue - minValue);
+        return minValue +  static_cast<float>(std::rand()) / static_cast<float>((RAND_MAX)) * (maxValue - minValue);
     }
 
     void SetRandomColliderPosition(Vector2D& position, const float screenWidth, const float screenHeight)
@@ -76,7 +77,7 @@ namespace ApplesGame
     }
 
     void SetSpriteRelativeOrigin(sf::Sprite& sprite, const float originX, const float originY)
-    {
+    {        
         const sf::FloatRect spriteRect = sprite.getLocalBounds();
         sprite.setOrigin(originX * spriteRect.width, originY * spriteRect.height);
     }

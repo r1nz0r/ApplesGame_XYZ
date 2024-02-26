@@ -11,7 +11,6 @@ using namespace ApplesGame;
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), GAME_TITLE);
-
     std::srand(static_cast<unsigned>(time(nullptr)));
 
     Game game;

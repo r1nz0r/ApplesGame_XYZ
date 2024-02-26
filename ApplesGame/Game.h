@@ -19,6 +19,12 @@ namespace ApplesGame
     constexpr size_t MENU_OPTIONS = 5;
     constexpr uint8_t DEFAULT_MODE = FINITE_MODE | ACCELERATION_MODE;
 
+    struct Score
+    {
+        std::string name;
+        int value;
+    };
+    
     struct Game
     {
         Player player;
@@ -57,13 +63,12 @@ namespace ApplesGame
         uint8_t mode = DEFAULT_MODE;
     };
 
-    void InitializeMenu(Game& game);
-    void ShowMenu(Game& game, sf::RenderWindow& window);
+    inline bool operator< (const Score& left, const Score& right) { return left.value < right.value;}
+
     void InitializeGame(Game& game);
     void Restart(Game& game);
     void DrawGame(sf::RenderWindow& window, Game& game);
     bool CheckPlayerCollisions(sf::RenderWindow& window, Game& game);
-    void DisplayEndMessage(Game& game, const std::string& message, sf::RenderWindow& window);
     void InitializeShape(const Vector2D& object, const float size, const sf::Color& color, sf::Shape& shape);
     void PlaySound(Game& game, const sf::SoundBuffer& soundToPlay);
     void ProcessMenuInput(Game& game);
