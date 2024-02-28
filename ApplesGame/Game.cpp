@@ -15,14 +15,26 @@ namespace ApplesGame
         assert(game.deathSoundBuffer.loadFromFile(RESOURCES_PATH + "Death.wav"));
     }
 
+    void InitializeScores(Game& game)
+    {
+        game.scores.push_back(game.playerScore);
+        game.scores.push_back(new Score("Sobaken", game.applesAmount));
+        game.scores.push_back(new Score("Kraken", game.applesAmount / 2));
+        game.scores.push_back(new Score("Obema", game.applesAmount / 3));
+        game.scores.push_back(new Score("Kandibober", game.applesAmount / 4));
+    }
+
     void InitializeGame(Game& game)
     {
         game.applesAmount = GetRandomInt(APPLES_AMOUNT_MIN, APPLES_AMOUNT_MAX);
         game.rocksAmount = GetRandomInt(ROCKS_AMOUNT_MIN, ROCKS_AMOUNT_MAX);
 
+        game.playerScore = new Score("You", 0);
+
         InitializePlayer(game.player, game);
         InitializeApples(game.apples, game);
         InitializeRocks(game.rocks, game);
+        InitializeScores(game);
 
         game.eatenApplesCount = 0;
         game.scoreLabel.position = {10, 10};
@@ -35,10 +47,34 @@ namespace ApplesGame
             "\nFor toggle hint message visibility press \"H\" key";
         InitializeLabel(game.hintLabel);
     }
-    
+
+    void UpdatePlayerScore(Score* const score, int applesEaten)
+    {
+        score->value = applesEaten;
+    }
+
+    void UpdateScores(std::vector<Score*>& scores)
+    {
+        std::sort(scores.begin(), scores.end(), CompareScores);
+    }
+
+    void ClearScores(std::vector<Score*>& scores)
+    {
+        for (auto& score : scores)
+        {
+            delete score;
+            score = nullptr;
+        }
+
+        scores.clear();
+        scores.shrink_to_fit();
+    }
+
     void Restart(Game& game)
     {
         game.isStarted = false;
+
+        ClearScores(game.scores);
         InitializeGame(game);
         game.pauseTimeLeft = RESTART_DELAY;
         game.isPaused = false;
@@ -177,17 +213,21 @@ namespace ApplesGame
     void StartEndGame(sf::RenderWindow& window, Game& game, const float deltaTime)
     {
         game.pauseTimeLeft -= deltaTime;
+        UpdatePlayerScore(game.playerScore, game.eatenApplesCount);
+        UpdateScores(game.scores);
+
         std::string endMessage;
+        std::string scoresString = GetScoresString(game.scores);
 
         if (game.applesAmount != game.eatenApplesCount)
         {
-            endMessage = "You loose! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" +
-                "\nYour score is: " + std::to_string(game.eatenApplesCount);
+            endMessage = "You loose! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
+                //"\nYour score is: " + std::to_string(game.eatenApplesCount);
         }
         else
         {
-            endMessage = "You Win! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" +
-                "\nYour score is: " + std::to_string(game.eatenApplesCount);
+            endMessage = "You Win! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
+                //"\nYour score is: " + std::to_string(game.eatenApplesCount);
         }
 
         DisplayEndMessage(game, endMessage, window);
@@ -198,11 +238,30 @@ namespace ApplesGame
         }
     }
 
+    std::string GetScoresString(std::vector<Score*>& scores)
+    {
+        std::string scoresString = "";
+        std::string separator = " - ";
+
+        for (const auto& score : scores)
+        {
+            scoresString += score->playerName + separator + std::to_string(score->value) + "\n";
+        }
+
+        return scoresString;
+    }
+
     void UpdateGameState(sf::RenderWindow& window, Game& game, const float deltaTime)
     {
         CalculatePlayerMovement(game.player, deltaTime);
         RotatePlayer(game.player);
         game.isPaused = CheckPlayerCollisions(window, game);
         DrawGame(window, game);
+    }
+
+    Game::~Game()
+    {
+        delete playerScore;
+        playerScore = nullptr;
     }
 }

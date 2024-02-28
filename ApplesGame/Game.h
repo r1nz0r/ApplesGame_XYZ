@@ -21,8 +21,10 @@ namespace ApplesGame
 
     struct Score
     {
-        std::string name;
+        std::string playerName;
         int value;
+        Score(std::string name, int value) : playerName(name), value(value) {};
+        ~Score() = default;
     };
     
     struct Game
@@ -34,6 +36,9 @@ namespace ApplesGame
 
         int rocksAmount;
         std::vector<Rock> rocks;
+
+        Score* playerScore;
+        std::vector<Score*> scores;
 
         bool isStarted = false;
         bool isFinished = false;
@@ -61,9 +66,11 @@ namespace ApplesGame
         sf::Sound sound;
 
         uint8_t mode = DEFAULT_MODE;
+
+        ~Game();
     };
 
-    inline bool operator< (const Score& left, const Score& right) { return left.value < right.value;}
+    inline bool CompareScores (const Score* left, const Score* right) { return left->value < right->value;}
 
     void InitializeGame(Game& game);
     void Restart(Game& game);
@@ -75,4 +82,9 @@ namespace ApplesGame
     void StartEndGame(sf::RenderWindow& window, Game& game, const float deltaTime);
     void UpdateGameState(sf::RenderWindow& window, Game& game, const float deltaTime);
     void LoadResources(Game& game);
+    void InitializeScores(Game& game);
+    void ClearScores(std::vector<Score*>& scores);
+    void UpdatePlayerScore(Score* const score, int applesEaten);
+    void UpdateScores(std::vector<Score*>& scores);
+    std::string GetScoresString(std::vector<Score*>& scores);
 }
