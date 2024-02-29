@@ -222,12 +222,10 @@ namespace ApplesGame
         if (game.applesAmount != game.eatenApplesCount)
         {
             endMessage = "You loose! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
-                //"\nYour score is: " + std::to_string(game.eatenApplesCount);
         }
         else
         {
             endMessage = "You Win! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
-                //"\nYour score is: " + std::to_string(game.eatenApplesCount);
         }
 
         DisplayEndMessage(game, endMessage, window);

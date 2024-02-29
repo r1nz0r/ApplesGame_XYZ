@@ -25,6 +25,7 @@ namespace ApplesGame
         int value;
         Score(std::string name, int value) : playerName(name), value(value) {};
         ~Score() = default;
+        bool operator< (const Score& other) const { return value < other.value; }
     };
     
     struct Game
@@ -70,7 +71,7 @@ namespace ApplesGame
         ~Game();
     };
 
-    inline bool CompareScores (const Score* left, const Score* right) { return left->value < right->value;}
+    inline bool CompareScores (const Score* left, const Score* right) { return *left < *right;}
 
     void InitializeGame(Game& game);
     void Restart(Game& game);
