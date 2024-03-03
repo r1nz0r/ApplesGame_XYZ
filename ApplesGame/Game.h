@@ -11,81 +11,76 @@
 
 namespace ApplesGame
 {
-    //GameMode
-    constexpr uint8_t FINITE_MODE = 0x01;
-    constexpr uint8_t ENDLESS_MODE = 0x02;
-    constexpr uint8_t ACCELERATION_MODE = 0x04;
-    constexpr uint8_t NO_ACCELERATION_MODE = 0x08;
-    constexpr size_t MENU_OPTIONS = 5;
-    constexpr uint8_t DEFAULT_MODE = FINITE_MODE | ACCELERATION_MODE;
+	//GameMode
+	constexpr uint8_t FINITE_MODE = 0x01;
+	constexpr uint8_t ENDLESS_MODE = 0x02;
+	constexpr uint8_t ACCELERATION_MODE = 0x04;
+	constexpr uint8_t NO_ACCELERATION_MODE = 0x08;
+	constexpr size_t MENU_OPTIONS = 5;
+	constexpr uint8_t DEFAULT_MODE = FINITE_MODE | ACCELERATION_MODE;
 
-    struct Score
-    {
-        std::string playerName;
-        int value;
-        Score(std::string name, int value) : playerName(name), value(value) {};
-        ~Score() = default;
-        bool operator< (const Score& other) const { return value < other.value; }
-    };
-    
-    struct Game
-    {
-        Player player;
+	struct Score
+	{
+		std::string playerName;
+		int value;
+		Score() : playerName("Player"), value(0) {};
+		Score(std::string name, int value) : playerName(name), value(value) {};
+		bool operator< (const Score& other) const { return value < other.value; }
+	};
 
-        int applesAmount;
-        std::vector<Apple> apples;
+	struct Game
+	{
+		Player player;
 
-        int rocksAmount;
-        std::vector<Rock> rocks;
+		int applesAmount;
+		std::vector<Apple> apples;
 
-        Score* playerScore;
-        std::vector<Score*> scores;
+		int rocksAmount;
+		std::vector<Rock> rocks;
 
-        bool isStarted = false;
-        bool isFinished = false;
-        bool isPaused = false;
-        bool isMuted = false;
+		std::vector<Score> scores;
 
-        float pauseTimeLeft = RESTART_DELAY;
+		bool isStarted = false;
+		bool isFinished = false;
+		bool isPaused = false;
+		bool isMuted = false;
 
-        int eatenApplesCount = 0;
+		float pauseTimeLeft = RESTART_DELAY;
 
-        sf::Clock clock;
-        Label menuLabels[MENU_OPTIONS];
+		int eatenApplesCount = 0;
 
-        Label scoreLabel;
-        Label hintLabel;
+		sf::Clock clock;
+		Label menuLabels[MENU_OPTIONS];
 
-        //Textures
-        sf::Texture playerTexture;
-        sf::Texture appleTexture;
-        sf::Texture rockTexture;
+		Label scoreLabel;
+		Label hintLabel;
 
-        //Audio
-        sf::SoundBuffer eatSoundBuffer;
-        sf::SoundBuffer deathSoundBuffer;
-        sf::Sound sound;
+		//Textures
+		sf::Texture playerTexture;
+		sf::Texture appleTexture;
+		sf::Texture rockTexture;
 
-        uint8_t mode = DEFAULT_MODE;
+		//Audio
+		sf::SoundBuffer eatSoundBuffer;
+		sf::SoundBuffer deathSoundBuffer;
+		sf::Sound sound;
 
-        ~Game();
-    };
+		uint8_t mode = DEFAULT_MODE;
+	};
 
-    inline bool CompareScores (const Score* left, const Score* right) { return *left < *right;}
-
-    void InitializeGame(Game& game);
-    void Restart(Game& game);
-    void DrawGame(sf::RenderWindow& window, Game& game);
-    bool CheckPlayerCollisions(sf::RenderWindow& window, Game& game);
-    void InitializeShape(const Vector2D& object, const float size, const sf::Color& color, sf::Shape& shape);
-    void PlaySound(Game& game, const sf::SoundBuffer& soundToPlay);
-    void ProcessMenuInput(Game& game);
-    void StartEndGame(sf::RenderWindow& window, Game& game, const float deltaTime);
-    void UpdateGameState(sf::RenderWindow& window, Game& game, const float deltaTime);
-    void LoadResources(Game& game);
-    void InitializeScores(Game& game);
-    void ClearScores(std::vector<Score*>& scores);
-    void UpdatePlayerScore(Score* const score, int applesEaten);
-    void UpdateScores(std::vector<Score*>& scores);
-    std::string GetScoresString(std::vector<Score*>& scores);
+	void InitializeGame(Game& game);
+	void Restart(Game& game);
+	void DrawGame(sf::RenderWindow& window, Game& game);
+	bool CheckPlayerCollisions(sf::RenderWindow& window, Game& game);
+	void InitializeShape(const Vector2D& object, const float size, const sf::Color& color, sf::Shape& shape);
+	void PlaySound(Game& game, const sf::SoundBuffer& soundToPlay);
+	void ProcessMenuInput(Game& game);
+	void StartEndGame(sf::RenderWindow& window, Game& game);
+	void UpdateEndGame(Game& game, const float deltaTime);
+	void UpdateGameState(sf::RenderWindow& window, Game& game, const float deltaTime);
+	void LoadResources(Game& game);
+	void InitializeScores(Game& game);
+	void ClearScores(std::vector<Score>& scores);
+	void UpdateScores(std::vector<Score>& scores);
+	std::string GetScoresString(std::vector<Score>& scores);
 }

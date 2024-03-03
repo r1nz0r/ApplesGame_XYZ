@@ -11,8 +11,8 @@ namespace ApplesGame
         player.radius = 10.0f;
         player.speed = player.INITIAL_SPEED;
         player.direction = MoveDirection::None;
-        //player.shape.setSize(sf::Vector2f(player.SIZE, player.SIZE));
-        //InitializeShape(player.position, player.SIZE, sf::Color::Green, player.shape);
+        player.name = "Player";
+
         player.sprite.setTexture(game.playerTexture);
         SetSpriteSize(player.sprite, player.radius * 2.f, player.radius * 2.f);
         SetSpriteRelativeOrigin(player.sprite, 0.5f, 0.5f);

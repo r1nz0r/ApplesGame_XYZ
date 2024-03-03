@@ -5,261 +5,246 @@
 #include "Player.h"
 
 namespace ApplesGame
-{    
-    void LoadResources(Game& game)
-    {
-        assert(game.playerTexture.loadFromFile(RESOURCES_PATH + "Player.png"));
-        assert(game.appleTexture.loadFromFile(RESOURCES_PATH + "Apple.png"));
-        assert(game.rockTexture.loadFromFile(RESOURCES_PATH + "Rock.png"));
-        assert(game.eatSoundBuffer.loadFromFile(RESOURCES_PATH + "AppleEat.wav"));
-        assert(game.deathSoundBuffer.loadFromFile(RESOURCES_PATH + "Death.wav"));
-    }
+{
+	void LoadResources(Game& game)
+	{
+		assert(game.playerTexture.loadFromFile(RESOURCES_PATH + "Player.png"));
+		assert(game.appleTexture.loadFromFile(RESOURCES_PATH + "Apple.png"));
+		assert(game.rockTexture.loadFromFile(RESOURCES_PATH + "Rock.png"));
+		assert(game.eatSoundBuffer.loadFromFile(RESOURCES_PATH + "AppleEat.wav"));
+		assert(game.deathSoundBuffer.loadFromFile(RESOURCES_PATH + "Death.wav"));
+	}
 
-    void InitializeScores(Game& game)
-    {
-        game.scores.push_back(game.playerScore);
-        game.scores.push_back(new Score("Sobaken", game.applesAmount));
-        game.scores.push_back(new Score("Kraken", game.applesAmount / 2));
-        game.scores.push_back(new Score("Obema", game.applesAmount / 3));
-        game.scores.push_back(new Score("Kandibober", game.applesAmount / 4));
-    }
+	void InitializeScores(Game& game)
+	{
+		game.scores.reserve(5);
+		game.scores.push_back(Score("Sobaken", game.applesAmount));
+		game.scores.push_back(Score("Kraken", game.applesAmount / 2));
+		game.scores.push_back(Score("Obema", game.applesAmount / 3));
+		game.scores.push_back(Score("Kandibober", game.applesAmount / 4));
+	}
 
-    void InitializeGame(Game& game)
-    {
-        game.applesAmount = GetRandomInt(APPLES_AMOUNT_MIN, APPLES_AMOUNT_MAX);
-        game.rocksAmount = GetRandomInt(ROCKS_AMOUNT_MIN, ROCKS_AMOUNT_MAX);
+	void InitializeGame(Game& game)
+	{
+		game.applesAmount = GetRandomInt(APPLES_AMOUNT_MIN, APPLES_AMOUNT_MAX);
+		game.rocksAmount = GetRandomInt(ROCKS_AMOUNT_MIN, ROCKS_AMOUNT_MAX);
 
-        game.playerScore = new Score("You", 0);
+		InitializePlayer(game.player, game);
+		InitializeApples(game.apples, game);
+		InitializeRocks(game.rocks, game);
+		InitializeScores(game);
 
-        InitializePlayer(game.player, game);
-        InitializeApples(game.apples, game);
-        InitializeRocks(game.rocks, game);
-        InitializeScores(game);
+		game.eatenApplesCount = 0;
+		game.scoreLabel.position = { 10, 10 };
+		game.scoreLabel.message = "Score: " + std::to_string(game.eatenApplesCount);
+		InitializeLabel(game.scoreLabel);
 
-        game.eatenApplesCount = 0;
-        game.scoreLabel.position = {10, 10};
-        game.scoreLabel.message = "Score: " + std::to_string(game.eatenApplesCount);
-        InitializeLabel(game.scoreLabel);
+		game.hintLabel.position = { 10, 30 };
+		game.hintLabel.message = "Use arrows to move pacman.\nEat apples, dont touch borders and rocks."
+			"\nFor toggle sound press \"M\" key"
+			"\nFor toggle hint message visibility press \"H\" key";
+		InitializeLabel(game.hintLabel);
+	}
 
-        game.hintLabel.position = {10, 30};
-        game.hintLabel.message = "Use arrows to move pacman.\nEat apples, dont touch borders and rocks."
-            "\nFor toggle sound press \"M\" key"
-            "\nFor toggle hint message visibility press \"H\" key";
-        InitializeLabel(game.hintLabel);
-    }
+	void UpdateScores(std::vector<Score>& scores)
+	{
+		std::sort(scores.begin(), scores.end());
+	}
 
-    void UpdatePlayerScore(Score* const score, int applesEaten)
-    {
-        score->value = applesEaten;
-    }
+	void ClearScores(std::vector<Score>& scores)
+	{
+		scores.clear();
+	}
 
-    void UpdateScores(std::vector<Score*>& scores)
-    {
-        std::sort(scores.begin(), scores.end(), CompareScores);
-    }
+	void Restart(Game& game)
+	{
+		game.isStarted = false;
+		game.isFinished = false;
 
-    void ClearScores(std::vector<Score*>& scores)
-    {
-        for (auto& score : scores)
-        {
-            delete score;
-            score = nullptr;
-        }
+		ClearScores(game.scores);
+		InitializeGame(game);
 
-        scores.clear();
-        scores.shrink_to_fit();
-    }
+		game.pauseTimeLeft = RESTART_DELAY;
+		game.isPaused = false;
+	}
 
-    void Restart(Game& game)
-    {
-        game.isStarted = false;
+	void DrawGame(sf::RenderWindow& window, Game& game)
+	{
+		window.clear();
+		DrawPlayer(game.player, window);
 
-        ClearScores(game.scores);
-        InitializeGame(game);
-        game.pauseTimeLeft = RESTART_DELAY;
-        game.isPaused = false;
-    }
+		for (Apple& apple : game.apples)
+		{
+			if (apple.isEaten == false)
+				DrawApple(apple, window);
+		}
 
-    void DrawGame(sf::RenderWindow& window, Game& game)
-    {
-        window.clear();
-        DrawPlayer(game.player, window);
+		for (Rock& rock : game.rocks)
+		{
+			DrawRock(rock, window);
+		}
 
-        for (Apple& apple : game.apples)
-        {
-            if (apple.isEaten == false)
-                DrawApple(apple, window);
-        }
+		window.draw(game.scoreLabel.text);
 
-        for (Rock& rock : game.rocks)
-        {
-            DrawRock(rock, window);
-        }
+		if (game.hintLabel.isVisible)
+			window.draw(game.hintLabel.text);
 
-        window.draw(game.scoreLabel.text);
+		window.display();
+	}
 
-        if (game.hintLabel.isVisible)
-            window.draw(game.hintLabel.text);
+	void InitializeShape(const Vector2D& object, const float size, const sf::Color& color, sf::Shape& shape)
+	{
+		shape.setFillColor(color);
+		shape.setOrigin(size / 2.f, size / 2.f);
+		shape.setPosition(object.x, object.y);
+	}
 
-        window.display();
-    }
+	void PlaySound(Game& game, const sf::SoundBuffer& soundToPlay)
+	{
+		game.sound.setBuffer(soundToPlay);
+		game.sound.play();
+	}
 
-    void InitializeShape(const Vector2D& object, const float size, const sf::Color& color, sf::Shape& shape)
-    {
-        shape.setFillColor(color);
-        shape.setOrigin(size / 2.f, size / 2.f);
-        shape.setPosition(object.x, object.y);
-    }
+	void OnAppleCollisionEnter(Game& game, Apple& apple)
+	{
+		if (game.mode & ENDLESS_MODE)
+		{
+			SetRandomColliderPosition(apple.position, SCREEN_WIDTH, SCREEN_HEIGHT);
+			apple.sprite.setPosition(apple.position.x, apple.position.y);
+		}
+		else
+		{
+			apple.isEaten = true;
+		}
 
-    void PlaySound(Game& game, const sf::SoundBuffer& soundToPlay)
-    {
-        game.sound.setBuffer(soundToPlay);
-        game.sound.play();
-    }
+		++game.eatenApplesCount;
+		game.scoreLabel.text.setString("Score: " + std::to_string(game.eatenApplesCount));
 
-    void OnAppleCollisionEnter(Game& game, Apple& apple)
-    {
-        if (game.mode & ENDLESS_MODE)
-        {
-            SetRandomColliderPosition(apple.position, SCREEN_WIDTH, SCREEN_HEIGHT);
-            apple.sprite.setPosition(apple.position.x, apple.position.y);
-        }
-        else
-        {
-            apple.isEaten = true;
-        }
+		if (game.mode & ACCELERATION_MODE)
+			game.player.speed += game.player.ACCELERATION;
 
-        ++game.eatenApplesCount;
-        game.scoreLabel.text.setString("Score: " + std::to_string(game.eatenApplesCount));
+		if (!game.isMuted)
+			PlaySound(game, game.eatSoundBuffer);
+	}
 
-        if (game.mode & ACCELERATION_MODE)
-            game.player.speed += game.player.ACCELERATION;
+	bool CheckPlayerCollisions(sf::RenderWindow& window, Game& game)
+	{
+		// Check bounds
+		if (CheckCircleBoundsCollision(game.player))
+		{
+			if (!game.isMuted)
+				PlaySound(game, game.deathSoundBuffer);
 
-        if (!game.isMuted)
-            PlaySound(game, game.eatSoundBuffer);
-    }
+			return true;
+		}
 
-    bool CheckPlayerCollisions(sf::RenderWindow& window, Game& game)
-    {
-        // Check bounds
-        if (CheckCircleBoundsCollision(game.player))
-        {
-            if (!game.isMuted)
-                PlaySound(game, game.deathSoundBuffer);
+		for (int i = 0; i < game.applesAmount; ++i)
+		{
+			if (game.apples[i].isEaten)
+				continue;
 
-            return true;
-        }
+			if (CheckCircleCollision(game.player, game.apples[i]))
+			{
+				OnAppleCollisionEnter(game, game.apples[i]);
 
-        for (int i = 0; i < game.applesAmount; ++i)
-        {
-            if (game.apples[i].isEaten)
-                continue;
+				if (game.eatenApplesCount == game.applesAmount && (game.mode & FINITE_MODE))
+					return true;
+			}
+		}
 
-            if (CheckCircleCollision(game.player, game.apples[i]))
-            {
-                OnAppleCollisionEnter(game, game.apples[i]);
+		for (int i = 0; i < game.rocksAmount; ++i)
+		{
+			if (CheckCircleAndRectangleCollision(game.player, game.rocks[i]))
+			{
+				if (!game.isMuted)
+					PlaySound(game, game.deathSoundBuffer);
 
-                if (game.eatenApplesCount == game.applesAmount && (game.mode & FINITE_MODE))
-                    return true;
-            }
-        }
+				return true;
+			}
+		}
 
-        for (int i = 0; i < game.rocksAmount; ++i)
-        {
-            if (CheckCircleAndRectangleCollision(game.player, game.rocks[i]))
-            {
-                if (!game.isMuted)
-                    PlaySound(game, game.deathSoundBuffer);
+		return false;
+	}
 
-                return true;
-            }
-        }
+	void ProcessMenuInput(Game& game)
+	{
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
+		{
+			game.menuLabels[0].text.setFillColor(sf::Color::Green);
+			game.menuLabels[1].text.setFillColor(sf::Color::Yellow);
+			game.mode |= FINITE_MODE;
+			game.mode &= ~ENDLESS_MODE;
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
+		{
+			game.menuLabels[0].text.setFillColor(sf::Color::Yellow);
+			game.menuLabels[1].text.setFillColor(sf::Color::Green);
+			game.mode |= ENDLESS_MODE;
+			game.mode &= ~FINITE_MODE;
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
+		{
+			game.menuLabels[2].text.setFillColor(sf::Color::Green);
+			game.menuLabels[3].text.setFillColor(sf::Color::Yellow);
+			game.mode |= ACCELERATION_MODE;
+			game.mode &= ~NO_ACCELERATION_MODE;
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4))
+		{
+			game.menuLabels[2].text.setFillColor(sf::Color::Yellow);
+			game.menuLabels[3].text.setFillColor(sf::Color::Green);
+			game.mode |= NO_ACCELERATION_MODE;
+			game.mode &= ~ACCELERATION_MODE;
+		}
+	}
 
-        return false;
-    }
+	void StartEndGame(sf::RenderWindow& window, Game& game)
+	{
+		game.scores.push_back(Score(game.player.name, game.eatenApplesCount));
+		UpdateScores(game.scores);
 
-    void ProcessMenuInput(Game& game)
-    {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
-        {
-            game.menuLabels[0].text.setFillColor(sf::Color::Green);
-            game.menuLabels[1].text.setFillColor(sf::Color::Yellow);
-            game.mode |= FINITE_MODE;
-            game.mode &= ~ENDLESS_MODE;
-        }
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
-        {
-            game.menuLabels[0].text.setFillColor(sf::Color::Yellow);
-            game.menuLabels[1].text.setFillColor(sf::Color::Green);
-            game.mode |= ENDLESS_MODE;
-            game.mode &= ~FINITE_MODE;
-        }
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
-        {
-            game.menuLabels[2].text.setFillColor(sf::Color::Green);
-            game.menuLabels[3].text.setFillColor(sf::Color::Yellow);
-            game.mode |= ACCELERATION_MODE;
-            game.mode &= ~NO_ACCELERATION_MODE;
-        }
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4))
-        {
-            game.menuLabels[2].text.setFillColor(sf::Color::Yellow);
-            game.menuLabels[3].text.setFillColor(sf::Color::Green);
-            game.mode |= NO_ACCELERATION_MODE;
-            game.mode &= ~ACCELERATION_MODE;
-        }
-    }
+		std::string endMessage;
+		std::string scoresString = GetScoresString(game.scores);
 
-    void StartEndGame(sf::RenderWindow& window, Game& game, const float deltaTime)
-    {
-        game.pauseTimeLeft -= deltaTime;
-        UpdatePlayerScore(game.playerScore, game.eatenApplesCount);
-        UpdateScores(game.scores);
+		if (game.applesAmount != game.eatenApplesCount)
+		{
+			endMessage = "You loose! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
+		}
+		else
+		{
+			endMessage = "You Win! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
+		}
 
-        std::string endMessage;
-        std::string scoresString = GetScoresString(game.scores);
+		DisplayEndMessage(game, endMessage, window);
+		game.isFinished = true;
+	}
 
-        if (game.applesAmount != game.eatenApplesCount)
-        {
-            endMessage = "You loose! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
-        }
-        else
-        {
-            endMessage = "You Win! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
-        }
+	void UpdateEndGame(Game& game, const float deltaTime)
+	{
+		game.pauseTimeLeft -= deltaTime;
 
-        DisplayEndMessage(game, endMessage, window);
+		if (game.pauseTimeLeft <= 0.0f)
+			Restart(game);
+	}
 
-        if (game.pauseTimeLeft <= 0.0f)
-        {
-            Restart(game);
-        }
-    }
+	std::string GetScoresString(std::vector<Score>& scores)
+	{
+		std::string scoresString = "";
+		std::string separator = " - ";
 
-    std::string GetScoresString(std::vector<Score*>& scores)
-    {
-        std::string scoresString = "";
-        std::string separator = " - ";
+		for (const auto& score : scores)
+		{
+			scoresString += score.playerName + separator + std::to_string(score.value) + "\n";
+		}
 
-        for (const auto& score : scores)
-        {
-            scoresString += score->playerName + separator + std::to_string(score->value) + "\n";
-        }
+		return scoresString;
+	}
 
-        return scoresString;
-    }
-
-    void UpdateGameState(sf::RenderWindow& window, Game& game, const float deltaTime)
-    {
-        CalculatePlayerMovement(game.player, deltaTime);
-        RotatePlayer(game.player);
-        game.isPaused = CheckPlayerCollisions(window, game);
-        DrawGame(window, game);
-    }
-
-    Game::~Game()
-    {
-        delete playerScore;
-        playerScore = nullptr;
-    }
+	void UpdateGameState(sf::RenderWindow& window, Game& game, const float deltaTime)
+	{
+		CalculatePlayerMovement(game.player, deltaTime);
+		RotatePlayer(game.player);
+		game.isPaused = CheckPlayerCollisions(window, game);
+		DrawGame(window, game);
+	}
 }
