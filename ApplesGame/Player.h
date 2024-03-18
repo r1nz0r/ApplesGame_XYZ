@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <string>
 #include "Math.h"
 
 namespace ApplesGame
@@ -22,6 +23,7 @@ namespace ApplesGame
         float speed = INITIAL_SPEED;
         sf::Sprite sprite;
         MoveDirection direction = MoveDirection::None;
+        std::string name;
     };
 
     void InitializePlayer(Player& player, const Game& game);
