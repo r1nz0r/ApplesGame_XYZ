@@ -21,7 +21,7 @@ namespace ApplesGame
     void InitializeLabel(Label& label);
     void ShowMenu(Game& game, sf::RenderWindow& window);
     void InitializeMenu(Game& game);
-    void DisplayEndMessage(Game& game, const std::string& message, sf::RenderWindow& window);
+    void DisplayMessage(Game& game, const std::string& message, sf::RenderWindow& window);
 
     
 }

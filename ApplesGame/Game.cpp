@@ -17,22 +17,26 @@ namespace ApplesGame
 
 	void InitializeScores(Game& game)
 	{
-		game.scores.reserve(5);
-		game.scores.push_back(Score("Sobaken", game.applesAmount));
-		game.scores.push_back(Score("Kraken", game.applesAmount / 2));
-		game.scores.push_back(Score("Obema", game.applesAmount / 3));
-		game.scores.push_back(Score("Kandibober", game.applesAmount / 4));
+		game.scores =
+		{
+			{"Sobaken", game.applesAmount},
+			{"Kraken", game.applesAmount / 2},
+			{"Obema", game.applesAmount / 3},
+			{"Kandibober", game.applesAmount / 4}
+		};
 	}
 
 	void InitializeGame(Game& game)
 	{
 		game.applesAmount = GetRandomInt(APPLES_AMOUNT_MIN, APPLES_AMOUNT_MAX);
 		game.rocksAmount = GetRandomInt(ROCKS_AMOUNT_MIN, ROCKS_AMOUNT_MAX);
+		game.gameState = EGameState::MainMenu;
 
 		InitializePlayer(game.player, game);
 		InitializeApples(game.apples, game);
 		InitializeRocks(game.rocks, game);
-		InitializeScores(game);
+		if (game.scores.empty())
+			InitializeScores(game);
 
 		game.eatenApplesCount = 0;
 		game.scoreLabel.position = { 10, 10 };
@@ -46,26 +50,13 @@ namespace ApplesGame
 		InitializeLabel(game.hintLabel);
 	}
 
-	void UpdateScores(std::vector<Score>& scores)
-	{
-		std::sort(scores.begin(), scores.end());
-	}
-
-	void ClearScores(std::vector<Score>& scores)
-	{
-		scores.clear();
-	}
-
 	void Restart(Game& game)
 	{
-		game.isStarted = false;
-		game.isFinished = false;
-
-		ClearScores(game.scores);
 		InitializeGame(game);
 
 		game.pauseTimeLeft = RESTART_DELAY;
-		game.isPaused = false;
+		game.isScoreUpdated = false;
+		game.gameState = EGameState::MainMenu;
 	}
 
 	void DrawGame(sf::RenderWindow& window, Game& game)
@@ -166,85 +157,144 @@ namespace ApplesGame
 		return false;
 	}
 
-	void ProcessMenuInput(Game& game)
+	void HandleMainMenuInput(const sf::Event& event, sf::RenderWindow& window, Game& game)
 	{
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Num1))
 		{
-			game.menuLabels[0].text.setFillColor(sf::Color::Green);
-			game.menuLabels[1].text.setFillColor(sf::Color::Yellow);
+			game.menuLabels[static_cast<int>(EMenuOptions::FiniteMode)].text.setFillColor(sf::Color::Green);
+			game.menuLabels[static_cast<int>(EMenuOptions::EndlessMode)].text.setFillColor(sf::Color::Yellow);
 			game.mode |= FINITE_MODE;
 			game.mode &= ~ENDLESS_MODE;
 		}
-		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
+		
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Num2))
 		{
-			game.menuLabels[0].text.setFillColor(sf::Color::Yellow);
-			game.menuLabels[1].text.setFillColor(sf::Color::Green);
+			game.menuLabels[static_cast<int>(EMenuOptions::FiniteMode)].text.setFillColor(sf::Color::Yellow);
+			game.menuLabels[static_cast<int>(EMenuOptions::EndlessMode)].text.setFillColor(sf::Color::Green);
 			game.mode |= ENDLESS_MODE;
 			game.mode &= ~FINITE_MODE;
 		}
-		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
+		
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Num3))
 		{
-			game.menuLabels[2].text.setFillColor(sf::Color::Green);
-			game.menuLabels[3].text.setFillColor(sf::Color::Yellow);
+			game.menuLabels[static_cast<int>(EMenuOptions::AccelerationMode)].text.setFillColor(sf::Color::Green);
+			game.menuLabels[static_cast<int>(EMenuOptions::StandardSpeedMode)].text.setFillColor(sf::Color::Yellow);
 			game.mode |= ACCELERATION_MODE;
 			game.mode &= ~NO_ACCELERATION_MODE;
 		}
-		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4))
+		
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Num4))
 		{
-			game.menuLabels[2].text.setFillColor(sf::Color::Yellow);
-			game.menuLabels[3].text.setFillColor(sf::Color::Green);
+			game.menuLabels[static_cast<int>(EMenuOptions::AccelerationMode)].text.setFillColor(sf::Color::Yellow);
+			game.menuLabels[static_cast<int>(EMenuOptions::StandardSpeedMode)].text.setFillColor(sf::Color::Green);
 			game.mode |= NO_ACCELERATION_MODE;
 			game.mode &= ~ACCELERATION_MODE;
 		}
+		
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Num5))
+		{
+			game.gameState = EGameState::Scoreboard;
+		}
+
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Enter))
+		{
+			InitializeGame(game);
+			game.gameState = EGameState::Playing;
+		}
 	}
 
-	void StartEndGame(sf::RenderWindow& window, Game& game)
+	void HandleScoreboardInput(const sf::Event& event, sf::RenderWindow& window, Game& game)
 	{
-		game.scores.push_back(Score(game.player.name, game.eatenApplesCount));
-		UpdateScores(game.scores);
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Escape))
+		{
+			game.gameState = EGameState::MainMenu;
+		}
+	}
 
+	void UpdateEndGameState(sf::RenderWindow& window, Game& game, const float deltaTime)
+	{
+		game.pauseTimeLeft -= deltaTime;
 		std::string endMessage;
-		std::string scoresString = GetScoresString(game.scores);
 
 		if (game.applesAmount != game.eatenApplesCount)
 		{
-			endMessage = "You loose! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
+			endMessage = "You loose! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds";
 		}
 		else
 		{
-			endMessage = "You Win! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds" + "\n" + scoresString;
+			endMessage = "You Win! The game will restart in " + std::to_string(RESTART_DELAY) + " seconds";
 		}
 
-		DisplayEndMessage(game, endMessage, window);
-		game.isFinished = true;
-	}
-
-	void UpdateEndGame(Game& game, const float deltaTime)
-	{
-		game.pauseTimeLeft -= deltaTime;
+		if (!game.isScoreUpdated)
+		{
+			game.scores["Player"] = std::max(game.scores["Player"], game.eatenApplesCount);
+			game.isScoreUpdated = true;
+		}
+		
+		DisplayMessage(game, endMessage, window);
 
 		if (game.pauseTimeLeft <= 0.0f)
 			Restart(game);
 	}
 
-	std::string GetScoresString(std::vector<Score>& scores)
+	void UpdateMainMenuGameState(sf::RenderWindow& window, Game& game)
 	{
-		std::string scoresString = "";
-		std::string separator = " - ";
+		ShowMenu(game, window);
+		window.display();
+	}
 
-		for (const auto& score : scores)
+	std::string GetScoresString(std::unordered_map<std::string, int>& scores)
+	{
+		std::string scoresString;
+		const std::string separator = " - ";
+		
+		std::vector<std::pair<std::string, int>> scoreVector(scores.begin(), scores.end());
+
+		auto compareByValue = [](const std::pair<std::string, int>& a, const std::pair<std::string, int>& b)
+			{
+				return a.second > b.second; // Sort in reverse order
+			};
+
+		std::sort(scoreVector.begin(), scoreVector.end(), compareByValue);	
+
+		for (const auto& score : scoreVector)
 		{
-			scoresString += score.playerName + separator + std::to_string(score.value) + "\n";
+			scoresString += score.first + separator + std::to_string(score.second) + "\n";
 		}
 
 		return scoresString;
 	}
 
-	void UpdateGameState(sf::RenderWindow& window, Game& game, const float deltaTime)
+
+	void UpdateScoreboardState(sf::RenderWindow& window, Game& game)
+	{		
+		std::string scoresString = GetScoresString(game.scores);
+		scoresString += "\n\nPress ESC to return to main menu.";
+		DisplayMessage(game, scoresString, window);
+	}
+
+	void UpdatePlayingGameState(sf::RenderWindow& window, Game& game, const float deltaTime)
 	{
 		CalculatePlayerMovement(game.player, deltaTime);
 		RotatePlayer(game.player);
-		game.isPaused = CheckPlayerCollisions(window, game);
+		
+		if (CheckPlayerCollisions(window, game))
+		{
+			game.gameState = EGameState::EndGame;
+		}
+
 		DrawGame(window, game);
+	}
+
+	void HandlePlayingEvents(const sf::Event& event, sf::RenderWindow& window, Game& game)
+	{
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Escape))
+			window.close();
+
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::H))
+			game.hintLabel.isVisible = !game.hintLabel.isVisible;
+
+		if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::M))
+			game.isMuted = !game.isMuted;	
 	}
 }
