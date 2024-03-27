@@ -3,6 +3,7 @@
 #include <SFML/Audio/Sound.hpp>
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <vector>
+#include <unordered_map>
 #include "Player.h"
 #include "Apple.h"
 #include "Rock.h"
@@ -16,16 +17,26 @@ namespace ApplesGame
 	constexpr uint8_t ENDLESS_MODE = 0x02;
 	constexpr uint8_t ACCELERATION_MODE = 0x04;
 	constexpr uint8_t NO_ACCELERATION_MODE = 0x08;
-	constexpr size_t MENU_OPTIONS = 5;
 	constexpr uint8_t DEFAULT_MODE = FINITE_MODE | ACCELERATION_MODE;
 
-	struct Score
+	enum class EMenuOptions
 	{
-		std::string playerName;
-		int value;
-		Score() : playerName("Player"), value(0) {};
-		Score(std::string name, int value) : playerName(name), value(value) {};
-		bool operator< (const Score& other) const { return value < other.value; }
+		FiniteMode,
+		EndlessMode,
+		AccelerationMode,
+		StandardSpeedMode,
+		Scoreboard,
+		StartGame,
+		None
+	};
+
+	enum class EGameState
+	{
+		MainMenu,
+		Playing,
+		Scoreboard,
+		EndGame,
+		None
 	};
 
 	struct Game
@@ -38,11 +49,8 @@ namespace ApplesGame
 		int rocksAmount;
 		std::vector<Rock> rocks;
 
-		std::vector<Score> scores;
-
-		bool isStarted = false;
-		bool isFinished = false;
-		bool isPaused = false;
+		//std::vector<Score> scores;
+		std::unordered_map <std::string, int> scores;
 		bool isMuted = false;
 
 		float pauseTimeLeft = RESTART_DELAY;
@@ -50,7 +58,7 @@ namespace ApplesGame
 		int eatenApplesCount = 0;
 
 		sf::Clock clock;
-		Label menuLabels[MENU_OPTIONS];
+		Label menuLabels[static_cast<int>(EMenuOptions::None)];
 
 		Label scoreLabel;
 		Label hintLabel;
@@ -65,6 +73,8 @@ namespace ApplesGame
 		sf::SoundBuffer deathSoundBuffer;
 		sf::Sound sound;
 
+		EGameState gameState;
+		bool isScoreUpdated = false;
 		uint8_t mode = DEFAULT_MODE;
 	};
 
@@ -74,13 +84,14 @@ namespace ApplesGame
 	bool CheckPlayerCollisions(sf::RenderWindow& window, Game& game);
 	void InitializeShape(const Vector2D& object, const float size, const sf::Color& color, sf::Shape& shape);
 	void PlaySound(Game& game, const sf::SoundBuffer& soundToPlay);
-	void ProcessMenuInput(Game& game);
-	void StartEndGame(sf::RenderWindow& window, Game& game);
-	void UpdateEndGame(Game& game, const float deltaTime);
-	void UpdateGameState(sf::RenderWindow& window, Game& game, const float deltaTime);
+	void HandleMainMenuInput(const sf::Event& event, sf::RenderWindow& window, Game& game);
+	void HandleScoreboardInput(const sf::Event& event, sf::RenderWindow& window, Game& game);
+	void UpdateEndGameState(sf::RenderWindow& window, Game& game, const float deltaTime);
+	void UpdateMainMenuGameState(sf::RenderWindow& window, Game& game);
+	void UpdatePlayingGameState(sf::RenderWindow& window, Game& game, const float deltaTime);
+	void HandlePlayingEvents(const sf::Event& event, sf::RenderWindow& window, Game& game);
 	void LoadResources(Game& game);
 	void InitializeScores(Game& game);
-	void ClearScores(std::vector<Score>& scores);
-	void UpdateScores(std::vector<Score>& scores);
-	std::string GetScoresString(std::vector<Score>& scores);
+	void UpdateScoreboardState(sf::RenderWindow& window,Game& game);
+	std::string GetScoresString(std::unordered_map<std::string, int>& scores);
 }

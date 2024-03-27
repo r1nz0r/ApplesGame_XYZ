@@ -30,46 +30,39 @@ int main()
 			if (event.type == sf::Event::Closed)
 				window.close();
 
-			if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Escape))
-				window.close();
-
-			if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::H))
-				game.hintLabel.isVisible = !game.hintLabel.isVisible;
-
-			if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Enter))
-				game.isStarted = true;
-
-			if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::M))
-				game.isMuted = !game.isMuted;
+			if (game.gameState == EGameState::Playing)
+				HandlePlayingEvents(event, window, game);
+			else if (game.gameState == EGameState::MainMenu)
+				HandleMainMenuInput(event, window, game);
+			else if (game.gameState == EGameState::Scoreboard)
+				HandleScoreboardInput(event, window, game);
 		}
 
-		if (game.isStarted)
+		//Calculate delta time
+		float currentTime = game.clock.getElapsedTime().asSeconds();
+		float deltaTime = currentTime - lastTime;
+		lastTime = currentTime;
+		
+		switch (game.gameState)
 		{
-			//Calculate delta time
-			float currentTime = game.clock.getElapsedTime().asSeconds();
-			float deltaTime = currentTime - lastTime;
-			lastTime = currentTime;
-
-			if (game.isPaused == false)
-			{
-				UpdateGameState(window, game, deltaTime);
-			}
-			else
-			{
-				if (game.isFinished == false)
-					StartEndGame(window, game);
-
-				UpdateEndGame(game, deltaTime);
-			}
-		}
-		else
-		{
-			ShowMenu(game, window);
-			window.display();
-
-			ProcessMenuInput(game);
+			case EGameState::MainMenu:
+				UpdateMainMenuGameState(window, game);
+				break;
+			case EGameState::Playing:
+				UpdatePlayingGameState(window, game, deltaTime);
+				break;
+			case EGameState::EndGame:
+				UpdateEndGameState(window, game, deltaTime);
+				break;
+			case EGameState::Scoreboard:
+				UpdateScoreboardState(window, game);
+				break;
+			default:
+				break;
 		}
 	}
 
 	return 0;
 }
+
+

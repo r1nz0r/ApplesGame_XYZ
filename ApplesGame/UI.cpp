@@ -26,29 +26,32 @@ namespace ApplesGame
 
     void InitializeMenu(Game& game)
     {
-        game.menuLabels[0].message = "1. Finite game mode";
-        game.menuLabels[0].color = sf::Color::Green;
+        game.menuLabels[static_cast<int>(EMenuOptions::FiniteMode)].message = "1. Finite game mode";
+        game.menuLabels[static_cast<int>(EMenuOptions::FiniteMode)].color = sf::Color::Green;
 
-        game.menuLabels[1].message = "2. Endless game mode";
-        game.menuLabels[1].color = sf::Color::Yellow;
+        game.menuLabels[static_cast<int>(EMenuOptions::EndlessMode)].message = "2. Endless game mode";
+        game.menuLabels[static_cast<int>(EMenuOptions::EndlessMode)].color = sf::Color::Yellow;
 
-        game.menuLabels[2].message = "3. Acceleration game mode";
-        game.menuLabels[2].color = sf::Color::Green;
+        game.menuLabels[static_cast<int>(EMenuOptions::AccelerationMode)].message = "3. Acceleration game mode";
+        game.menuLabels[static_cast<int>(EMenuOptions::AccelerationMode)].color = sf::Color::Green;
 
-        game.menuLabels[3].message = "4. Standard speed game mode";
-        game.menuLabels[3].color = sf::Color::Yellow;
+        game.menuLabels[static_cast<int>(EMenuOptions::StandardSpeedMode)].message = "4. Standard speed game mode";
+        game.menuLabels[static_cast<int>(EMenuOptions::StandardSpeedMode)].color = sf::Color::Yellow;
 
-        game.menuLabels[4].message = "Enter - Start game";
-        game.menuLabels[4].color = sf::Color::Cyan;
+        game.menuLabels[static_cast<int>(EMenuOptions::Scoreboard)].message = "5. Show scoreboard";
+        game.menuLabels[static_cast<int>(EMenuOptions::Scoreboard)].color = sf::Color::Yellow;
 
-        for (size_t i = 0; i < MENU_OPTIONS; ++i)
+        game.menuLabels[static_cast<int>(EMenuOptions::StartGame)].message = "Enter - Start game";
+        game.menuLabels[static_cast<int>(EMenuOptions::StartGame)].color = sf::Color::Cyan;
+
+        for (size_t i = 0; i < static_cast<int>(EMenuOptions::None); ++i)
         {
             game.menuLabels[i].position = {10.0f, (static_cast<float>(i) + 1) * 15.0f};
             InitializeLabel(game.menuLabels[i]);
         }
     }
     
-    void DisplayEndMessage(Game& game, const std::string& message, sf::RenderWindow& window)
+    void DisplayMessage(Game& game, const std::string& message, sf::RenderWindow& window)
     {
         game.scoreLabel.text.setString(message);
         window.clear();
